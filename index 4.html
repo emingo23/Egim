@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Eğim Sayacı</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{display:flex;align-items:center;justify-content:center;background:hsl(210 75% 48%);transition:background .18s ease;color:white}
+.wrap{text-align:center;width:100%;padding:30px}.value{font-size:clamp(90px,30vw,180px);font-weight:800;line-height:1;letter-spacing:-6px;text-shadow:0 5px 20px #0003}
+.unit{font-size:20px;opacity:.8;margin-top:8px}.btn{margin-top:42px;border:0;border-radius:18px;padding:16px 34px;font-size:19px;font-weight:700;color:#222;background:#fff;box-shadow:0 8px 25px #0003}
+#start{margin-top:18px}.hint{font-size:14px;opacity:.75;margin-top:22px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="value" class="value">0</div><div class="unit">°</div>
+<button id="reset" class="btn">Sıfırla</button><br>
+<button id="start" class="btn">Sensörü Başlat</button>
+<div class="hint">Telefonu istediğin hizaya getir, Sıfırla'ya bas. O hizadan itibaren sayar.</div>
+</div>
+<script>
+let value=0,lastAngle=null,sensorStarted=false;
+const valueEl=document.getElementById('value'), resetBtn=document.getElementById('reset'), startBtn=document.getElementById('start');
+function render(){
+ valueEl.textContent=Math.round(value);
+ const v=Math.max(-180,Math.min(180,value));
+ document.body.style.background=`hsl(${210-v*1.2} 75% 48%)`;
+}
+function handle(e){
+ if(typeof e.beta!=='number')return;
+ const angle=e.beta;
+ if(lastAngle===null){lastAngle=angle;return;}
+ let delta=angle-lastAngle;
+ if(delta>180)delta-=360;if(delta<-180)delta+=360;
+ if(Math.abs(delta)>=0.05){value+=delta;value=Math.max(-180,Math.min(180,value));lastAngle=angle;render();}
+}
+async function enable(){
+ try{
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+   const permission=await DeviceOrientationEvent.requestPermission();
+   if(permission!=='granted'){alert('Sensör izni verilmedi.');return;}
+  }
+  window.addEventListener('deviceorientation',handle,true);
+  sensorStarted=true;startBtn.style.display='none';
+ }catch(err){alert('Sensör başlatılamadı.');}
+}
+resetBtn.onclick=()=>{value=0;if(sensorStarted)lastAngle=null;render();};
+startBtn.onclick=enable;render();
+</script>
+</body>
+</html>

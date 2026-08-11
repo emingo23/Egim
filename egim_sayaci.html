@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Eğim Sayacı</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{display:flex;align-items:center;justify-content:center;background:hsl(210 75% 48%);transition:background .18s ease;color:white}
+.wrap{text-align:center;width:100%;padding:30px}.value{font-size:clamp(90px,30vw,180px);font-weight:800;line-height:1;letter-spacing:-6px;text-shadow:0 5px 20px #0003}
+.unit{font-size:20px;opacity:.8;margin-top:8px}.btn{margin-top:42px;border:0;border-radius:18px;padding:16px 34px;font-size:19px;font-weight:700;color:#222;background:#fff;box-shadow:0 8px 25px #0003}
+#start{margin-top:18px}.hint{font-size:14px;opacity:.75;margin-top:22px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="value" class="value">0</div>
+  <div class="unit">°</div>
+  <button id="reset" class="btn">Sıfırla</button><br>
+  <button id="start" class="btn">Sensörü Başlat</button>
+  <div class="hint">Telefonu havaya doğru eğdikçe sayı artar.</div>
+</div>
+<script>
+let value=0, last=0, active=false;
+const valueEl=document.getElementById('value');
+const start=document.getElementById('start');
+
+function render(){
+  valueEl.textContent=Math.round(value);
+  const v=Math.max(-90,Math.min(90,value));
+  const hue=210-v*2.2; // yükseldikçe mavi -> mor -> kırmızı
+  document.body.style.background=`hsl(${hue} 75% 48%)`;
+}
+function handle(e){
+  // beta: önden arkaya eğim, gamma: sağ-sol. beta telefonun havaya kaldırılmasına daha uygun.
+  let angle=typeof e.beta==='number'?e.beta:0;
+  let delta=angle-last;
+  if(Math.abs(delta)<0.25) return;
+  value += delta;
+  value=Math.max(-180,Math.min(180,value));
+  last=angle; render();
+}
+async function enable(){
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined' &&
+       typeof DeviceOrientationEvent.requestPermission==='function'){
+      const p=await DeviceOrientationEvent.requestPermission();
+      if(p!=='granted'){alert('Sensör izni verilmedi.');return}
+    }
+    window.addEventListener('deviceorientation',handle,true);
+    active=true; start.style.display='none';
+  }catch(err){alert('Sensör başlatılamadı.');}
+}
+document.getElementById('reset').onclick=()=>{value=0; last=0; render();}
+start.onclick=enable;
+render();
+</script>
+</body>
+</html>
